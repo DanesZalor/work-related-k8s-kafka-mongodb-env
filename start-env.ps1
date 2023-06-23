@@ -1,20 +1,28 @@
+# RUN THIS ON POWERSHELL
+# Powershell Extension on vscode doesnt seem to work with the Ctrl C mechanism
+
 $namespace = "k8-felis"
 
 $env:KIND_EXPERIMENTAL_PROVIDER="podman"
+$OUTPUT = "outputfile.yaml"
 
 function createBIGYAML
 {
-    $OUTPUT = "outputfile.yaml"
-    rm $OUTPUT; touch $OUTPUT
+    if(Test-Path $OUTPUT)
+    {
+        Remove-Item $OUTPUT
+    }
+    
+    New-Item $OUTPUT
 
     $yamlfilesToUse = $(ls .\*.yml) + $(ls .\kubernetes-mongodb\*.yml);
 
     foreach($file in $yamlfilesToUse)
     {
-        echo $(cat $file) "---" >> $OUTPUT;
+        Write-Output $(Get-Content $file) "---" >> $OUTPUT;
     }
 
-    echo $($(cat $OUTPUT) -replace "reserved-word-for-namespace-123456789", $namespace)  > $OUTPUT;
+    Write-Output $($(Get-Content $OUTPUT) -replace "reserved-word-for-namespace-123456789", $namespace)  > $OUTPUT;
     kubectl apply -f $OUTPUT;
 }
 
@@ -25,7 +33,7 @@ try
     if($($($(kubectl get namespaces) -match $namespace) -split '\s+').length -ne 0)
     {
         write-host "Detected uncleaned Kafka K8 resources. Deleting..."
-        kubectl delete -f "00-namespace.yml"
+        kubectl delete namespace $namespace
     }
     
     write-host "Setting up K8 Resources..."
@@ -49,6 +57,7 @@ try
     write-host "Kafka-Broker is now available!"
     write-host "PORT: kubectl port-forward -n $namespace $kafkapod 9092"
     write-host "LOGS: kubectl logs -n $namespace $kafkapod -f"
+    
     while($true)
     {
         Start-Sleep -Seconds 1
@@ -57,6 +66,10 @@ try
 finally
 {
     write-host "Cleaning up..."
+    if(Test-Path $OUTPUT)
+    {
+        Remove-Item $OUTPUT
+    }
     kubectl delete namespace $namespace
     write-host "exited"
 }
