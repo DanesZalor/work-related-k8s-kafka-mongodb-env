@@ -6,11 +6,9 @@ metadata:
   name: zookeeper-service
   namespace: reserved-word-for-namespace-123456789
 spec:
-  type: NodePort
   ports:
     - name: zookeeper-port
       port: 2181
-      nodePort: 30181
       targetPort: 2181
   selector:
     app: zookeeper

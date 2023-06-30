@@ -15,7 +15,7 @@ function createBIGYAML
     
     New-Item $OUTPUT
 
-    $yamlfilesToUse = $(ls .\*.yml) + $(ls .\kubernetes-mongodb\*.yml);
+    $yamlfilesToUse = $(Get-ChildItem .\*.yml) + $(Get-ChildItem .\kubernetes-mongodb\*.yml);
 
     foreach($file in $yamlfilesToUse)
     {
