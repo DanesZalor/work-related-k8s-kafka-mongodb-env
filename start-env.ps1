@@ -1,6 +1,6 @@
 param(
     [Parameter(Position=0,Mandatory=$true)][string] $namespace,
-    [Parameter(Position=0,Mandatory=$true)][string[]] $topics
+    [Parameter(Position=1,Mandatory=$true)][string[]] $topics
 )
 
 $env:KIND_EXPERIMENTAL_PROVIDER="podman"
