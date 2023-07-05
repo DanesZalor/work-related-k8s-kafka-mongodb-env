@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: "reserved-word-for-namespace-123456789"
-  labels:
-    name: "reserved-word-for-namespace-123456789"

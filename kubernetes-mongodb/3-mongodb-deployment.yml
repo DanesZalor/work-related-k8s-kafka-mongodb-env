@@ -4,7 +4,7 @@ metadata:
   labels:
     app: mongo
   name: mongo
-  namespace: reserved-word-for-namespace-123456789
+  namespace: default
 spec:
   replicas: 1
   selector:

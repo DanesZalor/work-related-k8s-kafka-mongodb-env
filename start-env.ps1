@@ -1,64 +1,49 @@
 param(
-    [Parameter(Position=0,Mandatory=$true)][string] $namespace,
     [Parameter(Position=1,Mandatory=$true)][string[]] $topics
 )
 
 $env:KIND_EXPERIMENTAL_PROVIDER="podman"
-$OUTPUT = "outputfile.yaml"
-
-function createBIGYAML
-{
-    if(Test-Path $OUTPUT)
-    {
-        Remove-Item $OUTPUT
-    }
-    
-    New-Item $OUTPUT
-
-    $yamlfilesToUse = $(Get-ChildItem .\*.yml) + $(Get-ChildItem .\kubernetes-mongodb\*.yml);
-
-    foreach($file in $yamlfilesToUse)
-    {
-        Write-Output $(Get-Content $file) "---" >> $OUTPUT;
-    }
-
-    Write-Output $($(Get-Content $OUTPUT) -replace "reserved-word-for-namespace-123456789", $namespace)  > $OUTPUT;
-    kubectl apply -f $OUTPUT;
-}
 
 try
 {
-    Write-Output "Creating Kafka K8 resources"
-    
-    if($($($(kubectl get namespaces) -match $namespace) -split '\s+').length -ne 0)
+    write-host "Cleaning up"
+    if($(kubectl get all --selector=appGroup=local-cluster-setup).Count -ne 0)
     {
-        write-host "Detected uncleaned Kafka K8 resources. Deleting..."
-        kubectl delete namespace $namespace
+        kubectl delete -k .
     }
-    
-    write-host "Setting up K8 Resources..."
-    createBIGYAML($namespace);
+
+    for($ready = $False; -Not $ready; $ready = $(kubectl get all --selector=appGroup=local-cluster-setup).Count -eq 0)
+    {
+        Start-Sleep 1;
+    }
+
+    podman start kind-control-plane
+    Write-Output "Creating Kafka K8 resources"
+    kubectl apply -k .
 
     Start-Sleep 1 # wait for the kafkapod to be Up and Running
 
     write-host "Waiting for Kafka Broker to start..."
-    $kafkapod = (kubectl get pods -n $namespace | findstr kafka).Split()[0]
+    $kafkapod = $(kubectl get pods -l=app=kafka-broker)[1].Split()[0]
 
-    for($status = ""; $status -ne "Running"; $status = $($(kubectl get pods -n $namespace $kafkapod) -split '\s+')[7])
+    for($ready = $False; -Not $ready; $ready = $(kubectl get pods $kafkapod)[1] -match '1/1')
     {
         Start-Sleep -Seconds 1
     }
-    Start-Sleep -Seconds 3
+
+    Start-Sleep -Seconds 1
 
     write-host "Creating Topics for Jobs"
     foreach($topic in $topics)
     {
-        kubectl exec -n $namespace "$kafkapod" -- kafka-topics --bootstrap-server kafka-service:9092 --create --topic $topic
+        kubectl exec "$kafkapod" -- kafka-topics --bootstrap-server kafka-service:9092 --create --topic $topic
     }
 
-    write-host "Kafka-Broker is now available!"
-    write-host "PORT: kubectl port-forward -n $namespace $kafkapod 9092"
-    write-host "LOGS: kubectl logs -n $namespace $kafkapod -f"
+    write-host "Kafka-Broker and Mongo DB is now available!"
+    write-host "Useful commands"
+    write-host "[port-forward]: kubectl port-forward $kafkapod 9092"
+    write-host "[kafka-console-consumer]: kubectl exec $kafkapod -- kafka-console-consumer --bootstrap-server kafka-service:9092 --topic <topic>"
+    write-host "[monitor] kubectl get all --selector=appGroup=local-cluster-setup"
     
     while($true)
     {
@@ -68,10 +53,5 @@ try
 finally
 {
     write-host "Cleaning up..."
-    if(Test-Path $OUTPUT)
-    {
-        Remove-Item $OUTPUT
-    }
-    kubectl delete namespace $namespace
-    write-host "exited"
+    kubectl delete -k .
 }

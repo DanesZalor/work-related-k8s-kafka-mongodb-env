@@ -4,7 +4,7 @@ metadata:
   labels:
     app: kafka-broker
   name: kafka-service
-  namespace: reserved-word-for-namespace-123456789
+  namespace: default
 spec:
   ports:
   - port: 9092
@@ -17,7 +17,7 @@ metadata:
   labels:
     app: kafka-broker
   name: kafka-broker
-  namespace: reserved-word-for-namespace-123456789
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -49,3 +49,13 @@ spec:
         name: kafka-broker
         ports:
         - containerPort: 9092
+        livenessProbe:
+          exec:
+            command:
+              - kafka-topics 
+              - --bootstrap-server 
+              - kafka-service:9092 
+              - --list
+          initialDelaySeconds: 5
+          periodSeconds: 5
+

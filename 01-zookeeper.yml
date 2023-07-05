@@ -4,7 +4,7 @@ metadata:
   labels:
     app: zookeeper-service
   name: zookeeper-service
-  namespace: reserved-word-for-namespace-123456789
+  namespace: default
 spec:
   ports:
     - name: zookeeper-port
@@ -19,7 +19,7 @@ metadata:
   labels:
     app: zookeeper
   name: zookeeper
-  namespace: reserved-word-for-namespace-123456789
+  namespace: default
 spec:
   replicas: 1
   selector:

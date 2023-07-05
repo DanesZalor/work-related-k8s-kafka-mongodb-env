@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: local-cluster-setup
+commonLabels:
+  appGroup: local-cluster-setup
+resources:
+- ./01-zookeeper.yml
+- ./02-kafka.yml
+- ./kubernetes-mongodb/0-mongodb-secrets.yml
+- ./kubernetes-mongodb/1-mongodb-pv.yml
+- ./kubernetes-mongodb/2-mongodb-pvc.yml
+- ./kubernetes-mongodb/3-mongodb-deployment.yml
+- ./kubernetes-mongodb/4-mongodb-clusterip-svc.yml
+

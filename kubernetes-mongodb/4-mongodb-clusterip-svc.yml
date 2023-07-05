@@ -4,7 +4,7 @@ metadata:
   labels:
     app: mongo
   name: mongo-svc
-  namespace: reserved-word-for-namespace-123456789
+  namespace: default
 spec:
   ports:
   - port: 27017
